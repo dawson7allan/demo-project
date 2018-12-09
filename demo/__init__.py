@@ -24,10 +24,12 @@ def create_app(config_class=Config):
     from demo.users.routes import users
     from demo.apis.routes import apis
     from demo.main.routes import main
+    from demo.errors.handlers import errors
     app.register_blueprint(users)
     api.init_app(apis)
     app.register_blueprint(apis)
     app.register_blueprint(main)
+    app.register_blueprint(errors)
 
     # Return flask app
     return app
