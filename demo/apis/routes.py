@@ -28,11 +28,10 @@ class Products(Resource):
         page = args['page'] if(args['page']) else 1
         per_page = args['per_page'] if(args['per_page']) else 5
 
-        date_time = validate_datetime(args['date_time'])
-
         try:
             # Query the Product table and paginate results
             if(args['date_time'] and args['description']):
+                date_time = validate_datetime(args['date_time'])
                 # print(args['date_time'], args['description'])
                 paginated_products = Product.query.filter_by(date_time=date_time, description=args['description']).paginate(page=page, per_page=per_page)
 
