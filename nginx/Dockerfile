@@ -1,3 +1,3 @@
-FROM nginx:1.15
-COPY ./sites-enabled/demo /etc/nginx/sites-enabled/demo
-# RUN ln -s /etc/nginx/sites-available/demo /etc/nginx/sites-enabled
+FROM tutum/nginx
+RUN rm /etc/nginx/sites-enabled/default
+ADD sites-enabled/ /etc/nginx/sites-enabled
