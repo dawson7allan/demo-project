@@ -1,5 +1,6 @@
 server {
-    server_name demo.allandawson.me;
+    listen 80;
+    server_name 149.28.229.177;
 
     location / {
 	include proxy_params;
@@ -17,7 +18,6 @@ server {
 #        return 301 https://$host$request_uri;
 #    } # managed by Certbot
 
-#    listen 80;
 #    server_name demo.allandawson.me;
 #    return 404; # managed by Certbot
 #}
