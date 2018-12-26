@@ -106,7 +106,7 @@ class Product_View(Resource):
     @check_api_key
     @check_product_id
     # Updates a product
-    def put(self, product_id):
+    def patch(self, product_id):
         # Parse the arguments sent by user
         parser = reqparse.RequestParser()
         parser.add_argument('date_time', type=str, required=False, help='Incorrect / Missing date_time, should be "YYYY-MM-DD HH:MM:SS"')
