@@ -1,4 +1,4 @@
-from flask import request, Blueprint
+from flask import request, Blueprint, jsonify
 from demo import db, api
 from demo.models import Product
 from demo.schema import ProductSchema
@@ -21,14 +21,26 @@ class Products(Resource):
         parser = reqparse.RequestParser()
         parser.add_argument('page', type=int, required=False, help='Incorrect page, should be an integer')
         parser.add_argument('per_page', type=int, required=False, help='Incorrect per_page, should be an integer')
+        parser.add_argument('date_time', type=str, required=False, help='Incorrect / Missing date_time, should be "YYYY-MM-DD HH:MM:SS"')
+        parser.add_argument('description', type=str, required=False, help='Incorrect / Missing description, should be a string')
         args = parser.parse_args()
         
         page = args['page'] if(args['page']) else 1
         per_page = args['per_page'] if(args['per_page']) else 5
 
+        date_time = validate_datetime(args['date_time'])
+
         try:
             # Query the Product table and paginate results
-            paginated_products = Product.query.paginate(page=page, per_page=per_page)
+            if(args['date_time'] and args['description']):
+                # print(args['date_time'], args['description'])
+                paginated_products = Product.query.filter_by(date_time=date_time, description=args['description']).paginate(page=page, per_page=per_page)
+
+                if(paginated_products.total == 0):
+                    return { 'message': 'Product with given date_time and description was not found' }, 404
+            else:
+                paginated_products = Product.query.paginate(page=page, per_page=per_page)
+                
             products = paginated_products.items
             # Use the ProductSchema to convert SQLAlchemy object to JSON
             product_schema = ProductSchema(many=True)
@@ -39,10 +51,11 @@ class Products(Resource):
                 'total_pages': paginated_products.pages,
                 'total_products': paginated_products.total,
                 'products_per_page': paginated_products.per_page,
-                'products': product_result.data
+                'products': product_result
             }
             return product_result, 200
-        except:
+        except Exception as err:
+            print(err)
             # If the page doesn't exist, give user feedback
             return {'message': 'This page does not exist'}, 404
 
@@ -112,23 +125,23 @@ class Product_View(Resource):
 
         # Try to update the product, if an exception handle it and give user feedback
         try:
-            product = Product.query.get(int(product_id))
             if(is_date_time):
+                product = Product.query.get(int(product_id))
                 product.date_time = date_time
-            for argument in args:
-                if(args[argument] is not None):
-                    if(argument == 'description'):
-                        product.description = args[argument]
-                    elif(argument == 'latitude'):
-                        product.latitude = args[argument]
-                    elif(argument == 'longitude'):
-                        product.longitude = args[argument]
-                    elif(argument == 'elevation'):
-                        product.elevation = args[argument]
+                for argument in args:
+                    if(args[argument] is not None):
+                        if(argument == 'description'):
+                            product.description = args[argument]
+                        elif(argument == 'latitude'):
+                            product.latitude = args[argument]
+                        elif(argument == 'longitude'):
+                            product.longitude = args[argument]
+                        elif(argument == 'elevation'):
+                            product.elevation = args[argument]
 
-            db.session.add(product)
-            db.session.commit()
-            return { 'message': 'This product has been successfully updated' }, 201
+                db.session.add(product)
+                db.session.commit()
+                return { 'message': 'This product has been successfully updated' }, 201
         except:
             return { 'message': 'This product does not exist' }, 404
 
@@ -152,56 +165,6 @@ class Product_View(Resource):
             return { 'message': 'This product does not exist' }, 404
 
 
-# Class to handle product search
-class Products_Search(Resource):
-
-    @check_api_key
-    @limit_per_page
-    # Gets a search result of products
-    def get(self):
-        # Parse the arguments sent by user
-        parser = reqparse.RequestParser()
-        parser.add_argument('page', type=int, required=False, help='Incorrect page, should be an integer')
-        parser.add_argument('per_page', type=int, required=False, help='Incorrect per_page, should be an integer')
-        parser.add_argument('date_time', type=str, required=True, help='Incorrect / Missing date_time, should be "YYYY-MM-DD HH:MM:SS"')
-        parser.add_argument('description', type=str, required=True, help='Incorrect / Missing description, should be a string')
-        args = parser.parse_args()
-
-        page = args['page'] if(args['page']) else 1
-        per_page = args['per_page'] if(args['per_page']) else 5
-        
-        # Validate the given date_time
-        try:
-            is_date_time, date_time = validate_datetime(args['date_time'])
-        except:
-            is_date_time = False
-            date_time = None
-
-        # Try to query the Product table with filter arguments, and paginate it, else give user feedback
-        try:
-            paginated_products = Product.query.filter_by(date_time=date_time, description=args['description']).paginate(page=page, per_page=per_page)
-
-            if(paginated_products.total == 0):
-                return { 'message': 'Product with given date_time and description was not found' }, 404
-
-            products = paginated_products.items
-            # Use the ProductSchema to convert SQLAlchemy object to JSON
-            product_schema = ProductSchema(many=True)
-            product_result = product_schema.dump(products)
-            # Add some useful info to the JSON
-            product_result = { 
-                'cur_page': paginated_products.page,
-                'total_pages': paginated_products.pages,
-                'total_products': paginated_products.total,
-                'products_per_page': paginated_products.per_page,
-                'products': product_result.data
-            }
-            return product_result, 200
-        except:
-            return { 'message': 'Product with given date_time and description was not found' }, 404
-
-
 # Register the route to access the above classes
 api.add_resource(Products, '/api/v1/products')
 api.add_resource(Product_View, '/api/v1/product/<int:product_id>')
-api.add_resource(Products_Search, '/api/v1/products/search')
