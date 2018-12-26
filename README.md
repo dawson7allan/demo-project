@@ -1,4 +1,4 @@
-# Texada Demo Project
+# Demo Project
 
 ## Python and Pip versions I used
     Python 3.6+
