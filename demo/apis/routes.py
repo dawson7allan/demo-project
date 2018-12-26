@@ -31,7 +31,7 @@ class Products(Resource):
         try:
             # Query the Product table and paginate results
             if(args['date_time'] and args['description']):
-                date_time = validate_datetime(args['date_time'])
+                is_date_time, date_time = validate_datetime(args['date_time'])
                 # print(args['date_time'], args['description'])
                 paginated_products = Product.query.filter_by(date_time=date_time, description=args['description']).paginate(page=page, per_page=per_page)
 
@@ -117,11 +117,11 @@ class Product_View(Resource):
         args = parser.parse_args()
 
         # Check if date_time is valid
-        date_time = validate_datetime(args['date_time'])
+        is_date_time, date_time = validate_datetime(args['date_time'])
 
         # Try to update the product, if an exception handle it and give user feedback
         try:
-            if(date_time):
+            if(is_date_time):
                 product = Product.query.get(int(product_id))
                 product.date_time = date_time
                 for argument in args:
@@ -138,6 +138,8 @@ class Product_View(Resource):
                 db.session.add(product)
                 db.session.commit()
                 return { 'message': 'This product has been successfully updated' }, 201
+            else:
+                return date_time, 403
         except:
             return { 'message': 'This product does not exist' }, 404
 

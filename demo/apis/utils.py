@@ -9,7 +9,7 @@ from flask_restful import reqparse
 def validate_datetime(date_time):
     # Check if the user sent argument is a valid date time
     try:
-        return datetime.strptime(date_time, '%Y-%m-%d %H:%M:%S')
+        return True, datetime.strptime(date_time, '%Y-%m-%d %H:%M:%S')
     except ValueError:
         return False, { 'message': { 'date_time': 'Incorrect date_time format, should be YYYY-MM-DD HH:MM:SS' } }
 
